@@ -1,35 +1,36 @@
-USING: accessors arrays calendar delegate delegate.protocols destructors fry io
-       io.encodings.8-bit.latin1 io.sockets io.streams.duplex kernel make math
-       math.parser namespaces prettyprint sequences threads ;
+USING: accessors arrays calendar continuations delegate
+       delegate.protocols destructors fry io io.encodings.8-bit.latin1
+       io.sockets io.streams.duplex kernel make math math.parser
+       namespaces prettyprint sequences splitting threads ;
 IN: elec344.xbee
 
-TUPLE: zigbee < disposable stream ;
+TUPLE: xbee < disposable stream ;
 
-SYMBOL: zigbee
+SYMBOL: xbee
 
-M: zigbee dispose* stream>> dispose* ;
+M: xbee dispose* stream>> dispose* ;
 
-CONSULT: input-stream-protocol zigbee stream>> ;
+CONSULT: input-stream-protocol xbee stream>> ;
 
-CONSULT: output-stream-protocol zigbee stream>> ;
+CONSULT: output-stream-protocol xbee stream>> ;
 
-M: zigbee in>> stream>> in>> ;
-M: zigbee out>> stream>> out>> ;
+M: xbee in>> stream>> in>> ;
+M: xbee out>> stream>> out>> ;
 
-: with-zigbee* ( zigbee quot -- )
-    zigbee swap with-variable ; inline
+: with-xbee* ( xbee quot -- )
+    xbee swap with-variable ; inline
 
-: with-zigbee ( zigbee quot -- )
-    [ with-zigbee* ] curry with-disposal ; inline
+: with-xbee ( xbee quot -- )
+    [ with-xbee* ] curry with-disposal ; inline
 
-: <zigbee> ( stream -- zigbee )
-    zigbee new [ (>>stream) ] keep ;
+: <xbee> ( stream -- xbee )
+    xbee new [ (>>stream) ] keep ;
 
-: <remote-zigbee> ( host port -- zigbee )
-    <inet> latin1 <client> drop <zigbee> ;
+: <remote-xbee> ( host port -- xbee )
+    <inet> latin1 <client> drop <xbee> ;
 
 : send-raw ( str -- )
-    zigbee get [ stream-write ] [ stream-flush ] bi ;
+    xbee get [ stream-write ] [ stream-flush ] bi ;
 
 : checksum ( data -- c )
     sum 255 bitand 255 bitxor ;
@@ -44,6 +45,24 @@ M: zigbee out>> stream>> out>> ;
         [ % ]
         [ checksum , ] tri
     ] "" make send-raw ;
+
+ERROR: invalid-packet ;
+
+: xbee-read1 ( -- c )
+    xbee get stream-read1 ;
+
+: xbee-read2 ( -- w )
+    xbee-read1 256 * xbee-read1 bitor ;
+
+: xbee-expect1 ( c -- )
+    xbee-read1 = [ invalid-packet ] unless ;
+
+: receive-packet ( -- pkt )
+    HEX: 7e xbee-expect1 xbee-read2 iota [ drop xbee-read1 ] map
+    dup checksum xbee-expect1 ;
+
+: receive-api ( -- data )
+    [ receive-packet ] [ drop receive-api ] recover ;
 
 : send-at-id ( data command id -- )
     [ 8 , , % % ] "" make send-api ;
@@ -71,3 +90,17 @@ CONSTANT: broadcast-16 { HEX: ff HEX: ff }
 
 : set-xbee-retries ( n -- )
     1array "RR" send-at ;
+
+SYMBOL: input-buffer
+
+: data-packet ( -- pkt )
+    [ receive-api dup first HEX: 81 = ] [ drop ] until
+    5 tail ;
+
+: refill-buffer ( -- )
+    input-buffer get data-packet append input-buffer set ;
+
+: recv-line ( -- str )
+    [ input-buffer get "\r\n" split dup length 1 = ] [ drop refill-buffer ] while
+    [ rest "\n" join input-buffer set ] [ first ] bi
+    dup empty? [ drop recv-line ] when ;
