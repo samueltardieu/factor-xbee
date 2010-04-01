@@ -46,7 +46,7 @@ ERROR: invalid-packet ;
     xbee get stream-read1 ;
 
 : xbee-read2 ( -- w )
-    xbee-read1 256 * xbee-read1 bitor ;
+    2 xbee get stream-read first2 [ 256 * ] [ bitor ] bi* ;
 
 : xbee-expect1 ( c -- )
     xbee-read1 = [ invalid-packet ] unless ;
@@ -84,7 +84,8 @@ CONSTANT: broadcast-16 B{ HEX: ff HEX: ff }
     "" "FR" send-at
     2 seconds sleep
     enter-command-mode
-    "ATAP1r\n" send-raw
+    "ATAP1\r\n" send-raw
+    1 seconds sleep
     leave-command-mode ;
 
 : set-my ( my -- )
