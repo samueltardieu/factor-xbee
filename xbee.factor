@@ -17,12 +17,6 @@ CONSULT: output-stream-protocol xbee stream>> ;
 M: xbee in>> stream>> in>> ;
 M: xbee out>> stream>> out>> ;
 
-: with-xbee* ( xbee quot -- )
-    xbee swap with-variable ; inline
-
-: with-xbee ( xbee quot -- )
-    [ with-xbee* ] curry with-disposal ; inline
-
 : <xbee> ( stream -- xbee )
     xbee new [ (>>stream) ] keep ;
 
@@ -90,17 +84,3 @@ CONSTANT: broadcast-16 { HEX: ff HEX: ff }
 
 : set-xbee-retries ( n -- )
     1array "RR" send-at ;
-
-SYMBOL: input-buffer
-
-: data-packet ( -- pkt )
-    [ receive-api dup first HEX: 81 = ] [ drop ] until
-    5 tail ;
-
-: refill-buffer ( -- )
-    input-buffer get data-packet append input-buffer set ;
-
-: recv-line ( -- str )
-    [ input-buffer get "\r\n" split dup length 1 = ] [ drop refill-buffer ] while
-    [ rest "\n" join input-buffer set ] [ first ] bi
-    dup empty? [ drop recv-line ] when ;
