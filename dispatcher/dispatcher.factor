@@ -8,6 +8,10 @@ SYMBOL: recipients
 SYMBOL: packets
 SYMBOL: id
 
+CONSTANT: max-retransmissions 50
+
+! A store packet is { pkt dst retransmissions }
+
 : next-id ( -- id )
     id get 1 + dup 256 = [ drop 1 ] when [ id set ] keep ;
 
@@ -20,13 +24,20 @@ SYMBOL: id
 : sender ( -- ? )
     receive [ first2 ] [ store-packet ] bi send-16-id t ;
 
-: dispatch-16 ( data dst -- )
-    2array sender-thread get send ;
+: dispatch-16-retransmissions ( data dst n -- )
+    3array sender-thread get send ;
 
-: retransmit ( id -- )
-    [ retrieve-packet first2 ]
-    [ number>string "<retransmitting packet " ">" surround ] bi
-    swap [ dispatch-16 ] [ log-for ] bi-curry bi* ;
+: dispatch-16 ( data dst -- )
+    0 dispatch-16-retransmissions ;
+
+: retransmit ( data dst retransmissions -- )
+    1 +
+    [ number>string "<retransmission " ">" surround swap log-for ]
+    [ dispatch-16-retransmissions ] 2bi ;
+
+: maybe-retransmit ( id -- )
+    retrieve-packet first3 dup max-retransmissions >=
+    [ drop nip "<retransmission aborted>" swap log-for ] [ retransmit ] if ;
 
 : recipient ( pkt -- id )
     3 head 1 tail >string ;
@@ -35,7 +46,7 @@ SYMBOL: id
     5 tail ;
 
 : check-for-negative-ack ( pkt -- )
-    dup third 1 = [ second retransmit ] [ drop ] if ;
+    dup third 1 = [ second maybe-retransmit ] [ drop ] if ;
 
 : receive-data-packet ( -- pkt ? )
     receive-api dup first
