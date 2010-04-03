@@ -1,6 +1,6 @@
-USING: arrays assocs combinators concurrency.messaging
-       elec344.challenge.logging elec344.xbee kernel math math.parser
-       namespaces sequences strings threads vectors ;
+USING: accessors arrays assocs combinators concurrency.messaging
+       elec344.challenge.logging elec344.xbee elec344.xbee.api.messages
+       kernel math math.parser namespaces sequences strings threads vectors ;
 IN: elec344.xbee.dispatcher
 
 SYMBOL: sender-thread
@@ -39,27 +39,21 @@ CONSTANT: max-retransmissions 50
     retrieve-packet first3 dup max-retransmissions >=
     [ drop nip "<retransmission aborted>" swap log-for ] [ retransmit ] if ;
 
-: recipient ( pkt -- id )
-    3 head 1 tail >string ;
-
-: content ( pkt -- content )
-    5 tail ;
-
 : check-for-negative-ack ( pkt -- )
-    dup third 1 = [ second maybe-retransmit ] [ drop ] if ;
+    dup status>> no-ack = [ id>> maybe-retransmit ] [ drop ] if ;
 
 : receive-data-packet ( -- pkt ? )
-    receive-api dup first
+    receive-message
     {
-        { HEX: 81 [ t ] }
-        { HEX: 89 [ dup check-for-negative-ack f ] }
-        [ drop f ]
-    } case ;
+        { [ dup rx? ] [ t ] }
+        { [ dup tx-status? ] [ dup check-for-negative-ack f ] }
+        [ f ]
+    } cond ;
 
 : receiver ( -- ? )
     [ receive-data-packet ] [ drop ] until
-    dup recipient recipients get at
-    [ [ content ] [ send ] bi* ] [ drop ] if* t ;
+    dup source>> >string recipients get at
+    [ [ data>> >string ] [ send ] bi* ] [ drop ] if* t ;
 
 : register-recipient ( thread-id recipient -- )
     recipients get set-at ;

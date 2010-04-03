@@ -51,6 +51,9 @@ ERROR: invalid-packet ;
 : receive-api ( -- data )
     [ receive-packet ] [ drop receive-api ] recover ;
 
+: receive-message ( -- message )
+    receive-api api>message ;
+
 : send-at-id ( data command id -- )
     [ <at-command> ] [ >>id ] bi* send-message ;
 
