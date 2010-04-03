@@ -11,7 +11,7 @@ SYMBOL: id
 
 CONSTANT: max-retransmissions 50
 
-! A store packet is { pkt dst retransmissions }
+! A stored packet is { message retransmissions }
 
 : next-id ( -- id )
     id get 1 + dup 256 = [ drop 1 ] when [ id set ] keep ;
@@ -23,22 +23,22 @@ CONSTANT: max-retransmissions 50
     packets get nth ;
 
 : sender ( -- ? )
-    receive [ first2 ] [ store-packet ] bi send-16-id t ;
+    receive dup store-packet first >>id send-message t ;
 
-: dispatch-16-retransmissions ( data dst n -- )
-    3array sender-thread get send ;
+: dispatch-retransmission ( message n -- )
+    2array sender-thread get send ;
 
-: dispatch-16 ( data dst -- )
-    0 dispatch-16-retransmissions ;
+: dispatch ( data dst -- )
+    <tx-request> 0 dispatch-retransmission ;
 
-: retransmit ( data dst retransmissions -- )
+: retransmit ( message retransmissions -- )
     1 +
     [ number>string "<retransmission " ">" surround swap log-for ]
-    [ dispatch-16-retransmissions ] 2bi ;
+    [ dispatch-retransmission ] 2bi ;
 
 : maybe-retransmit ( id -- )
-    retrieve-packet first3 dup max-retransmissions >=
-    [ drop nip "<retransmission aborted>" swap log-for ] [ retransmit ] if ;
+    retrieve-packet first2 dup max-retransmissions >=
+    [ drop "<retransmission aborted>" destination>> log-for ] [ retransmit ] if ;
 
 : check-for-negative-ack ( pkt -- )
     dup status>> no-ack = [ id>> maybe-retransmit ] [ drop ] if ;
