@@ -15,7 +15,7 @@ MACRO: cut-each ( specification -- quot )
 
 PRIVATE>
 
-GENERIC: message>api ( message -- data )
+GENERIC: message>frame ( message -- data )
 
 TUPLE: modem-status cmd-data ;
 
@@ -33,12 +33,15 @@ TUPLE: api-out { id initial: 0 } ;
 
 TUPLE: at-command < api-out name { data initial: B{ } } ;
 
-M: at-command message>api
+: <at-command> ( data name -- at-command )
+    [ at-command new ] 2dip [ >>data ] [ >>name ] bi* ;
+
+M: at-command message>frame
     [ 8 , [ id>> , ] [ name>> % ] [ data>> % ] tri ] format ;
 
 TUPLE: at-command-queue { id initial: 0 } name { data initial: B{ } } ;
 
-M: at-command-queue message>api
+M: at-command-queue message>frame
     [ 9 , [ id>> , ] [ name>> % ] [ data>> % ] tri ] format ;
 
 TUPLE: at-response id name status data ;
@@ -61,7 +64,7 @@ TUPLE: remote-at-command < api-out destination options name
 
 PRIVATE>
 
-M: remote-at-command message>api
+M: remote-at-command message>frame
     [ HEX: 17 , { [ id>> , ] [ destination-64 % ] [ destination-16 % ]
                   [ options>> , ] [ name>> % ]
                   [ data>> % ] } cleave ] format ;
@@ -70,7 +73,10 @@ TUPLE: remote-at-response id source name status data ;
 
 TUPLE: tx-request < api-out destination { options initial: 0 } data ;
 
-M: tx-request message>api
+: <tx-request> ( data destination -- tx-request )
+    [ tx-request new ] 2dip [ >>data ] [ >>destination ] bi* ;
+
+M: tx-request message>frame
     dup destination>> length 8 = 0 1 ?
     [ , { [ id>> , ] [ destination>> % ] [ options>> , ] [ data>> % ] } cleave ] format ;
 
