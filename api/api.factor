@@ -5,6 +5,12 @@ IN: elec344.xbee.api
 
 ERROR: invalid-packet ;
 
+: xbee-read1 ( -- c )
+    xbee get stream-read1 ;
+
+: xbee-expect1 ( c -- )
+    xbee-read1 = [ invalid-packet ] unless ;
+
 : xbee-read2 ( -- w )
     2 xbee get stream-read first2 [ 256 * ] [ bitor ] bi* ;
 
@@ -12,11 +18,11 @@ ERROR: invalid-packet ;
     HEX: 7e xbee-expect1 xbee-read2 xbee get stream-read
     dup checksum xbee-expect1 ;
 
-: receive-api ( -- data )
-    [ receive-packet ] [ drop receive-api ] recover ;
+: receive-frame ( -- data )
+    [ receive-packet ] [ drop receive-frame ] recover ;
 
 : receive-message ( -- message )
-    receive-api frame>message ;
+    receive-frame frame>message ;
 
 : send-message ( message -- )
     message>frame send-raw ;

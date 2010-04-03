@@ -1,7 +1,6 @@
-USING: accessors byte-arrays delegate delegate.protocols destructors
-       elec344.xbee.api elec344.xbee.api.messages io
-       io.encodings.binary io.sockets io.streams.duplex kernel
-       namespaces ;
+USING: accessors byte-arrays calendar delegate delegate.protocols
+       destructors io io.encodings.binary io.sockets io.streams.duplex
+       kernel namespaces threads ;
 IN: elec344.xbee
 
 TUPLE: xbee < disposable stream ;
@@ -26,8 +25,10 @@ M: xbee out>> stream>> out>> ;
 : send-raw ( seq -- )
     >byte-array xbee get [ stream-write ] [ stream-flush ] bi ;
 
-: xbee-read1 ( -- c )
-    xbee get stream-read1 ;
+: enter-command-mode ( -- )
+    1.1 seconds sleep
+    "+++" send-raw
+    1.1 seconds sleep ;
 
-: xbee-expect1 ( c -- )
-    xbee-read1 = [ invalid-packet ] unless ;
+: leave-command-mode ( -- )
+    "ATCN\r\n" send-raw ;
