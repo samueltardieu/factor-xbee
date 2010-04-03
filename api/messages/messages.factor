@@ -1,6 +1,10 @@
 USING: accessors byte-arrays combinators elec344.xbee.api kernel macros make sequences ;
 IN: elec344.xbee.api.messages
 
+CONSTANT: broadcast-16 B{ HEX: ff HEX: ff }
+CONSTANT: broadcast-64 B{ HEX: 00 HEX: 00 HEX: 00 HEX: 00
+                          HEX: 00 HEX: 00 HEX: ff HEX: ff }
+
 <PRIVATE
 
 : format ( message quot -- data )
@@ -44,15 +48,25 @@ CONSTANT: error 1
 CONSTANT: invalid-command 2
 CONSTANT: invalid-parameter 3
 
-TUPLE: remote-at-command < api-out destination network options name
+TUPLE: remote-at-command < api-out destination options name
     { data initial: B{ } } ;
 
+<PRIVATE
+
+: destination-64 ( r-a-c -- seq )
+    destination>> dup length 2 = [ drop B{ 0 0 0 0 0 0 0 0 } ] when ;
+
+: destination-16 ( r-a-c -- seq )
+    destination>> dup length 8 = [ drop B{ HEX: ff HEX: fe } ] when ;
+
+PRIVATE>
+
 M: remote-at-command message>api
-    [ HEX: 17 , { [ id>> , ] [ destination>> % ] [ network>> % ]
+    [ HEX: 17 , { [ id>> , ] [ destination-64 % ] [ destination-16 % ]
                   [ options>> , ] [ name>> % ]
                   [ data>> % ] } cleave ] format ;
 
-TUPLE: remote-at-response id source network name status data ;
+TUPLE: remote-at-response id source name status data ;
 
 TUPLE: tx-request < api-out destination { options initial: 0 } data ;
 
@@ -80,6 +94,9 @@ CONSTANT: pan-broadcast 4
 : separate ( data seq class -- message )
     [ rest ] [ cut-each ] [ boa ] tri* ; inline
 
+: select-address ( 64-bits 16-bits -- addr )
+    dup B{ HEX: ff HEX: fe } = ? ;
+
 PRIVATE>
 
 : api>message ( data -- message )
@@ -89,6 +106,7 @@ PRIVATE>
         { HEX: 88 [ { 1 2 1 } at-response separate ] }
         { HEX: 89 [ first2 tx-status boa ] }
         { HEX: 8a [ second modem-status boa ] }
-        { HEX: 97 [ { 1 8 2 2 1 } remote-at-response separate ] }
+        { HEX: 97 [ rest { 1 8 2 2 1 } cut-each [ select-address ] 3dip
+                    remote-at-response boa ] }
         [ unknown-message ]
     } case ;
