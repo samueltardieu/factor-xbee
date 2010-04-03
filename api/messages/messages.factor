@@ -1,4 +1,5 @@
-USING: accessors byte-arrays combinators elec344.xbee.api kernel macros make sequences ;
+USING: accessors byte-arrays combinators elec344.xbee.api.utils kernel
+       macros make sequences ;
 IN: elec344.xbee.api.messages
 
 CONSTANT: broadcast-16 B{ HEX: ff HEX: ff }
@@ -105,7 +106,7 @@ CONSTANT: pan-broadcast 4
 
 PRIVATE>
 
-: api>message ( data -- message )
+: frame>message ( data -- message )
     dup first {
         { HEX: 80 [ { 8 1 1 } rx separate ] }
         { HEX: 81 [ { 2 1 1 } rx separate ] }
