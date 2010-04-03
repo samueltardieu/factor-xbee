@@ -1,5 +1,6 @@
 USING: accessors arrays byte-arrays calendar continuations delegate
-       delegate.protocols destructors fry io io.encodings.binary
+       delegate.protocols destructors elec344.xbee.api
+       fry io io.encodings.binary
        io.sockets io.streams.duplex kernel make math math.parser
        namespaces prettyprint sequences splitting threads ;
 IN: elec344.xbee
@@ -26,19 +27,8 @@ M: xbee out>> stream>> out>> ;
 : send-raw ( seq -- )
     >byte-array xbee get [ stream-write ] [ stream-flush ] bi ;
 
-: checksum ( data -- c )
-    sum 255 bitand 255 bitxor ;
-
-: ,2 ( word -- )
-    256 /mod [ , ] bi@ ;
-
 : send-api ( data -- )
-    [
-        HEX: 7e ,
-        [ length ,2 ]
-        [ % ]
-        [ checksum , ] tri
-    ] B{ } make send-raw ;
+    make-frame send-raw ;
 
 ERROR: invalid-packet ;
 
