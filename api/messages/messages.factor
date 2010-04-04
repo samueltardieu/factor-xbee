@@ -110,12 +110,15 @@ CONSTANT: pan-broadcast 4
 : select-address ( 64-bits 16-bits -- addr )
     dup B{ HEX: ff HEX: fe } = ? ;
 
+: fix-rx ( message -- message' )
+    [ first ] change-rssi [ first ] change-options ;
+
 PRIVATE>
 
 : frame>message ( data -- message )
     dup first {
-        { HEX: 80 [ { 8 1 1 } rx separate ] }
-        { HEX: 81 [ { 2 1 1 } rx separate ] }
+        { HEX: 80 [ { 8 1 1 } rx separate fix-rx ] }
+        { HEX: 81 [ { 2 1 1 } rx separate fix-rx ] }
         { HEX: 88 [ { 1 2 1 } at-response separate ] }
         { HEX: 89 [ first2 tx-status boa ] }
         { HEX: 8a [ second modem-status boa ] }
