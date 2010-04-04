@@ -1,10 +1,12 @@
-USING: accessors byte-arrays combinators elec344.xbee.api.utils kernel
+USING: accessors arrays byte-arrays combinators elec344.xbee.api.utils fry kernel
        macros make sequences ;
 IN: elec344.xbee.api.messages
 
 CONSTANT: broadcast-16 B{ HEX: ff HEX: ff }
 CONSTANT: broadcast-64 B{ HEX: 00 HEX: 00 HEX: 00 HEX: 00
                           HEX: 00 HEX: 00 HEX: ff HEX: ff }
+
+ERROR: bad-address address ;
 
 <PRIVATE
 
@@ -57,11 +59,15 @@ TUPLE: remote-at-command < api-out destination options name
 
 <PRIVATE
 
-: destination-64 ( r-a-c -- seq )
-    destination>> dup length 2 = [ drop B{ 0 0 0 0 0 0 0 0 } ] when ;
+MACRO: choose-destination ( quot-16 quot-64 -- seq )
+    [ 2 swap 2array ] [ 8 swap 2array ] bi* [ bad-address ] 3array
+    '[ destination>> dup length _ case ] ;
 
-: destination-16 ( r-a-c -- seq )
-    destination>> dup length 8 = [ drop B{ HEX: ff HEX: fe } ] when ;
+: destination-64 ( message -- seq )
+    [ drop B{ 0 0 0 0 0 0 0 0 } ] [ ] choose-destination ;
+
+: destination-16 ( message -- seq )
+    [ ] [ drop B{ HEX: ff HEX: fe } ] choose-destination ;
 
 PRIVATE>
 
@@ -78,7 +84,7 @@ TUPLE: tx-request < api-out destination { options initial: 0 } data ;
     [ tx-request new ] 2dip [ >>data ] [ >>destination ] bi* ;
 
 M: tx-request message>frame
-    dup destination>> length 8 = 0 1 ?
+    dup [ drop 1 ] [ drop 0 ] choose-destination
     [ , { [ id>> , ] [ destination>> % ] [ options>> , ] [ data>> % ] } cleave ] format ;
 
 CONSTANT: disable-ack 1
