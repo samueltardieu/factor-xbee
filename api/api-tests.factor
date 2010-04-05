@@ -1,4 +1,4 @@
-USING: accessors byte-arrays elec344.xbee.api.messages kernel strings tools.test ;
+USING: accessors byte-arrays elec344.xbee.api kernel strings tools.test ;
 
 [ T{ modem-status f 2 } ]
 [ B{ HEX: 8a HEX: 2 } frame>message ] unit-test
