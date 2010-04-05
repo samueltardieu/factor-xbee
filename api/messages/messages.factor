@@ -120,7 +120,7 @@ PRIVATE>
         { HEX: 80 [ { 8 1 1 } rx separate fix-rx ] }
         { HEX: 81 [ { 2 1 1 } rx separate fix-rx ] }
         { HEX: 88 [ { 1 2 1 } at-response separate ] }
-        { HEX: 89 [ first2 tx-status boa ] }
+        { HEX: 89 [ rest first2 tx-status boa ] }
         { HEX: 8a [ second modem-status boa ] }
         { HEX: 97 [ rest { 1 8 2 2 1 } cut-each [ select-address ] 3dip
                     remote-at-response boa ] }

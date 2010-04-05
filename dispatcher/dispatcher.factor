@@ -23,7 +23,7 @@ CONSTANT: max-retransmissions 50
     packets get nth ;
 
 : sender ( -- ? )
-    receive dup store-packet first >>id send-message t ;
+    receive dup store-packet [ first ] [ >>id ] bi* send-message t ;
 
 : dispatch-retransmission ( message n -- )
     2array sender-thread get send ;
@@ -33,12 +33,17 @@ CONSTANT: max-retransmissions 50
 
 : retransmit ( message retransmissions -- )
     1 +
-    [ number>string "<retransmission " ">" surround swap log-for ]
+    [ number>string "<retransmission " ">" surround
+      swap destination>> log-for ]
     [ dispatch-retransmission ] 2bi ;
 
 : maybe-retransmit ( id -- )
     retrieve-packet first2 dup max-retransmissions >=
-    [ drop "<retransmission aborted>" destination>> log-for ] [ retransmit ] if ;
+    [
+        drop "<retransmission aborted>" swap destination>> log-for
+    ] [
+        retransmit
+    ] if ;
 
 : check-for-negative-ack ( pkt -- )
     dup status>> no-ack = [ id>> maybe-retransmit ] [ drop ] if ;
