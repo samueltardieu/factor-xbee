@@ -1,6 +1,6 @@
-USING: accessors arrays byte-arrays combinators continuations
+USING: accessors arrays byte-arrays calendar combinators continuations
        elec344.xbee fry io kernel macros math make namespaces
-       sequences ;
+       sequences threads ;
 IN: elec344.xbee.api
 
 TUPLE: bad-checksum ;
@@ -148,17 +148,23 @@ CONSTANT: pan-broadcast 4
 : fix-rx ( message -- message' )
     [ first ] change-rssi [ first ] change-options ;
 
+: fix-at-response ( message -- message' )
+    [ first ] change-id [ first ] change-status ;
+
+: analyze-rx ( data seps -- message )
+    rx separate fix-rx ; inline
+
 PRIVATE>
 
 : frame>message ( data -- message )
     dup first {
-        { HEX: 80 [ { 8 1 1 } rx separate fix-rx ] }
-        { HEX: 81 [ { 2 1 1 } rx separate fix-rx ] }
-        { HEX: 88 [ { 1 2 1 } at-response separate ] }
+        { HEX: 80 [ { 8 1 1 } analyze-rx ] }
+        { HEX: 81 [ { 2 1 1 } analyze-rx ] }
+        { HEX: 88 [ { 1 2 1 } at-response separate fix-at-response ] }
         { HEX: 89 [ rest first2 tx-status boa ] }
         { HEX: 8a [ second modem-status boa ] }
         { HEX: 97 [ rest { 1 8 2 2 1 } cut-each [ select-address ] 3dip
-                    remote-at-response boa ] }
+                    remote-at-response boa fix-at-response ] }
         [ unknown-message ]
     } case ;
 
@@ -173,3 +179,10 @@ PRIVATE>
 
 : send-message ( message -- )
     message>frame send-raw ;
+
+: enter-api-mode ( -- )
+    B{ } "FR" <at-command> send-message
+    2 seconds sleep
+    enter-command-mode
+    "ATAP1\r\n" send-raw
+    leave-command-mode ;

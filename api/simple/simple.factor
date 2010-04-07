@@ -1,4 +1,4 @@
-USING: byte-arrays calendar elec344.xbee elec344.xbee.api threads ;
+USING: byte-arrays elec344.xbee elec344.xbee.api ;
 IN: elec344.xbee.api.simple
 
 : send ( data dst -- )
@@ -12,11 +12,3 @@ IN: elec344.xbee.api.simple
 
 : set-retries ( n -- )
     1byte-array "RR" send-at ;
-
-: enter-api-mode ( -- )
-    "" "FR" send-at
-    2 seconds sleep
-    enter-command-mode
-    "ATAP1\r\n" send-raw
-    1 seconds sleep
-    leave-command-mode ;
