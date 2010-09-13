@@ -17,7 +17,7 @@ M: xbee in>> stream>> in>> ;
 M: xbee out>> stream>> out>> ;
 
 : <xbee> ( stream -- xbee )
-    xbee new [ (>>stream) ] keep ;
+    xbee new [ stream<< ] keep ;
 
 : <remote-xbee> ( host port -- xbee )
     <inet> binary <client> drop <xbee> ;
