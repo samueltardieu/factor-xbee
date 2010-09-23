@@ -1,7 +1,7 @@
 USING: accessors arrays byte-arrays calendar combinators continuations
-       elec344.xbee fry io kernel macros math make namespaces
+       xbee fry io kernel macros math make namespaces
        sequences threads ;
-IN: elec344.xbee.api
+IN: xbee.api
 
 TUPLE: bad-checksum ;
 

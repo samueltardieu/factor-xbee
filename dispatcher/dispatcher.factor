@@ -1,8 +1,8 @@
 USING: accessors arrays assocs combinators concurrency.messaging
-       elec344.challenge.logging elec344.xbee elec344.xbee.api
+       elec344.challenge.logging xbee xbee.api
        kernel math math.parser namespaces
        sequences strings threads vectors ;
-IN: elec344.xbee.dispatcher
+IN: xbee.dispatcher
 
 SYMBOL: sender-thread
 SYMBOL: recipients

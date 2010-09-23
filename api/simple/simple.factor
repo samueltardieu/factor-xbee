@@ -1,5 +1,5 @@
-USING: byte-arrays elec344.xbee elec344.xbee.api ;
-IN: elec344.xbee.api.simple
+USING: byte-arrays xbee xbee.api ;
+IN: xbee.api.simple
 
 : send ( data dst -- )
     <tx-request> send-message ;

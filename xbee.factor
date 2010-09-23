@@ -1,7 +1,7 @@
 USING: accessors byte-arrays calendar delegate delegate.protocols
        destructors io io.encodings.binary io.sockets io.streams.duplex
        kernel namespaces threads ;
-IN: elec344.xbee
+IN: xbee
 
 TUPLE: xbee < disposable stream ;
 

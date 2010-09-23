@@ -1,6 +1,6 @@
 USING: accessors combinators.short-circuit concurrency.mailboxes
-       elec344.xbee.api fry kernel math namespaces threads ;
-IN: elec344.xbee.api.server
+       xbee.api fry kernel math namespaces threads ;
+IN: xbee.api.server
 
 SYMBOL: receiver-mailbox*
 
