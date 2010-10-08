@@ -1,7 +1,6 @@
 USING: accessors arrays assocs combinators concurrency.messaging
-       elec344.challenge.logging xbee xbee.api
-       kernel math math.parser namespaces
-       sequences strings threads vectors ;
+       kernel logging math math.parser namespaces
+       sequences strings threads vectors xbee xbee.api ;
 IN: xbee.dispatcher
 
 SYMBOL: sender-thread
@@ -31,16 +30,24 @@ CONSTANT: max-retransmissions 50
 : dispatch ( data dst -- )
     <tx-request> 0 dispatch-retransmission ;
 
+<PRIVATE
+
+: log-debug ( msg id word -- )
+    [ ": " append prepend ] dip DEBUG log-message ;
+
+PRIVATE>
+
 : retransmit ( message retransmissions -- )
     1 +
     [ number>string "<retransmission " ">" surround
-      swap destination>> log-for ]
+      swap destination>> \ retransmit log-debug ]
     [ dispatch-retransmission ] 2bi ;
 
 : maybe-retransmit ( id -- )
     retrieve-packet first2 dup max-retransmissions >=
     [
-        drop "<retransmission aborted>" swap destination>> log-for
+        drop "<retransmission aborted>" swap destination>>
+        \ maybe-retransmit log-debug
     ] [
         retransmit
     ] if ;
