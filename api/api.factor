@@ -16,7 +16,7 @@ TUPLE: bad-preambule ;
     sum 255 bitand 255 bitxor ;
 
 : make-frame ( data -- frame )
-    [ HEX: 7e , [ length ,2 ] [ % ] [ checksum , ] tri ] B{ } make ;
+    [ 0x7e , [ length ,2 ] [ % ] [ checksum , ] tri ] B{ } make ;
 
 : xbee-read1 ( -- c )
     xbee get stream-read1 ;
@@ -28,7 +28,7 @@ TUPLE: bad-preambule ;
     2 xbee get stream-read first2 [ 256 * ] [ bitor ] bi* ;
 
 : receive-packet ( -- pkt )
-    bad-preambule HEX: 7e xbee-expect1
+    bad-preambule 0x7e xbee-expect1
     xbee-read2 xbee get stream-read
     bad-checksum over checksum xbee-expect1 ;
 
@@ -37,9 +37,9 @@ TUPLE: bad-preambule ;
 
 PRIVATE>
 
-CONSTANT: broadcast-16 B{ HEX: ff HEX: ff }
-CONSTANT: broadcast-64 B{ HEX: 00 HEX: 00 HEX: 00 HEX: 00
-                          HEX: 00 HEX: 00 HEX: ff HEX: ff }
+CONSTANT: broadcast-16 B{ 0xff 0xff }
+CONSTANT: broadcast-64 B{ 0x00 0x00 0x00 0x00
+                          0x00 0x00 0xff 0xff }
 
 ERROR: bad-address address ;
 
@@ -102,12 +102,12 @@ MACRO: choose-destination ( quot-16 quot-64 -- seq )
     [ drop B{ 0 0 0 0 0 0 0 0 } ] [ ] choose-destination ;
 
 : destination-16 ( message -- seq )
-    [ ] [ drop B{ HEX: ff HEX: fe } ] choose-destination ;
+    [ ] [ drop B{ 0xff 0xfe } ] choose-destination ;
 
 PRIVATE>
 
 M: remote-at-command message>frame
-    [ HEX: 17 , { [ id>> , ] [ destination-64 % ] [ destination-16 % ]
+    [ 0x17 , { [ id>> , ] [ destination-64 % ] [ destination-16 % ]
                   [ options>> , ] [ name>> % ]
                   [ data>> % ] } cleave ] format ;
 
@@ -143,7 +143,7 @@ CONSTANT: pan-broadcast 4
     [ rest ] [ cut-each ] [ boa ] tri* ; inline
 
 : select-address ( 64-bits 16-bits -- addr )
-    dup B{ HEX: ff HEX: fe } = ? ;
+    dup B{ 0xff 0xfe } = ? ;
 
 : fix-rx ( message -- message' )
     [ first ] change-rssi [ first ] change-options ;
@@ -158,12 +158,12 @@ PRIVATE>
 
 : frame>message ( data -- message )
     dup first {
-        { HEX: 80 [ { 8 1 1 } analyze-rx ] }
-        { HEX: 81 [ { 2 1 1 } analyze-rx ] }
-        { HEX: 88 [ { 1 2 1 } at-response separate fix-at-response ] }
-        { HEX: 89 [ rest first2 tx-status boa ] }
-        { HEX: 8a [ second modem-status boa ] }
-        { HEX: 97 [ rest { 1 8 2 2 1 } cut-each [ select-address ] 3dip
+        { 0x80 [ { 8 1 1 } analyze-rx ] }
+        { 0x81 [ { 2 1 1 } analyze-rx ] }
+        { 0x88 [ { 1 2 1 } at-response separate fix-at-response ] }
+        { 0x89 [ rest first2 tx-status boa ] }
+        { 0x8a [ second modem-status boa ] }
+        { 0x97 [ rest { 1 8 2 2 1 } cut-each [ select-address ] 3dip
                     remote-at-response boa fix-at-response ] }
         [ unknown-message ]
     } case ;
